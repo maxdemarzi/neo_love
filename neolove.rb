@@ -56,17 +56,18 @@ class NeoLove < Sinatra::Application
     @user = (settings.guys + settings.girls).sample
     puts @user
     cypher = "START me=node:users_index(name={user})
-              MATCH attributes<-[:wants]-me-[:lives_in]->city<-[:lives_in]-person-[:has]->requirements
-              WHERE me-[:wants]->()<-[:has]-person AND me-[:has]->()<-[:wants]-person AND 
-              me.orientation = person.orientation AND
-              (me.gender <> person.gender OR me.orientation = \"gay\")
-              WITH DISTINCT city.name AS city_name, person.name AS person_name,
+              MATCH me-[:lives_in]->city<-[:lives_in]-person
+              WHERE me-[:wants]->()<-[:has]-person AND 
+                    me-[:has]->()<-[:wants]-person AND 
+                    me.orientation = person.orientation AND
+                    (me.gender <> person.gender OR me.orientation = \"gay\")
+              WITH DISTINCT city.name AS city_name, person, me,
               LENGTH(me-[:wants]->()<-[:has]-person) AS matching_wants,
-              LENGTH(me-[:has]->()<-[:wants]-person) AS matching_has,
-              COLLECT(DISTINCT requirements.name) AS req_names, 
-              COLLECT(DISTINCT attributes.name) AS want_names
-              RETURN city_name, person_name, FILTER(name in req_names WHERE name IN want_names) AS interests
-              ,matching_wants, matching_has
+              LENGTH(me-[:has]->()<-[:wants]-person) AS matching_has
+              MATCH person-[:has]->attributes<-[:wants]-me
+              RETURN city_name, person.name AS person_name,
+                     COLLECT(attributes.name) AS interests,
+                     matching_wants, matching_has
               ORDER BY matching_wants / (1.0 / matching_has) DESC
               LIMIT 10"                        
                         
