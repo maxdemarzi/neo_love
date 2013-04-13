@@ -74,10 +74,9 @@ class NeoLove < Sinatra::Application
     haml :index
   end
   
-  get'/user/:user/attributes/:attribute' do
+  get '/user/:user' do
     @user = params[:user]
-    @attribute = params[:attribute]
-    haml :attribute
+    haml :user
   end
   
 end
