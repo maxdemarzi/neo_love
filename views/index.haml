@@ -1,0 +1,28 @@
+.container
+  .content
+    .row
+      %h2="Matching Loves for #{@user}"
+      %i 
+        Reload the page or click 
+        %a{:href=>"/"}
+          Match Another User
+	
+      %table{:class => "table table-striped"}
+        %tr
+          %th Love
+          %th Compatibility
+          %th Matching
+
+        - @loves.each_with_index do |love, index|
+          %tr
+            %td
+              = love[1]
+              in 
+              %i= love[0]
+            %td
+              = love[3] / (1.0 / love[4])
+            %td
+              - love[2].each do |att|
+                %a.btn.btn-success{:href => "/user/#{@user}/attribute/#{att}"}
+                  %i.icon-ok.icon-white
+                  =att
