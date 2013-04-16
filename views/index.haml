@@ -1,7 +1,10 @@
 .container
   .content
     .row
-      %h2="Matching Loves for #{@user}"
+      %h2 
+        Matching Loves for 
+        %a{:href => "/user/#{@user}"} 
+          = @user
       %i 
         Reload the page or click 
         %a{:href=>"/"}
@@ -11,7 +14,8 @@
         %tr
           %th Love
           %th Compatibility
-          %th Matching
+          %th Your Matches
+          %th Their Matches
 
         - @loves.each_with_index do |love, index|
           %tr
@@ -21,9 +25,14 @@
               in 
               %i= love[0]
             %td
-              = love[3] / (1.0 / love[4])
+              = love[4] / (1.0 / love[5])
             %td
               - love[2].each do |att|
+                %a.btn.btn-success
+                  %i.icon-ok.icon-white
+                  =att
+            %td
+              - love[3].each do |att|
                 %a.btn.btn-success
                   %i.icon-ok.icon-white
                   =att
