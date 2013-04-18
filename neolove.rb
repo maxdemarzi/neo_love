@@ -61,7 +61,7 @@ class NeoLove < Sinatra::Application
               WHERE me-[:wants]->()<-[:has]-person AND 
                     me-[:has]->()<-[:wants]-person AND 
                     me.orientation = person.orientation AND
-                  ((me.gender <> person.gender OR me.orientation = \"straight\") OR
+                  ((me.gender <> person.gender AND me.orientation = \"straight\") OR
                    (me.gender = person.gender AND me.orientation = \"gay\")) 
               WITH DISTINCT city.name AS city_name, person, me
               MATCH  me-[:wants]->attributes<-[:has]-person-[:wants]->requirements<-[:has]-me
