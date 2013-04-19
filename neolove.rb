@@ -12,6 +12,10 @@ def orientation
   end
 end
 
+def hashify(results)
+  results["data"].map {|row| Hash[*results["columns"].zip(row).flatten] }
+end
+
 def create_graph
   neo = Neography::Rest.new
    
@@ -20,26 +24,49 @@ def create_graph
   cities = %w[Austin Baltimore Charlotte Chicago Dallas Detroit Miami Oakland Philadelphia Wichita]
   attributes = %w[Able Accepting Adventurous Aggressive Ambitious Annoying Arrogant Articulate Athletic Awkward Boastful Bold Bossy Brave Bright Busy Calm Careful Careless Caring Cautious Cheerful Clever Clumsy Compassionate Complex Conceited Confident Considerate Cooperative Courageous Creative Curious Dainty Daring Dark Defiant Demanding Determined Devout Disagreeable Disgruntled Dreamer Eager Efficient Embarrassed Energetic Excited Expert Fair Faithful Fancy Fighter Forgiving Free Friendly Friendly Frustrated Fun-loving Funny Generous Gentle Giving Gorgeous Gracious Grouchy Handsome Happy Hard-working Helpful Honest Hopeful                            Humble Humorous Imaginative Impulsive Independent Intelligent Inventive Jealous Joyful Judgmental Keen Kind Knowledgeable Lazy Leader Light Light-hearted Likeable Lively Lovable Loving Loyal Manipulative Materialistic Mature Melancholy Merry Messy Mischievous Naïve Neat Nervous Noisy Obnoxious Opinionated Organized Outgoing Passive Patient Patriotic Perfectionist Personable Pitiful Plain Pleasant Pleasing Poor Popular Pretty Prim Proper Proud Questioning Quiet Radical Realistic Rebellious Reflective Relaxed Reliable Religious Reserved Respectful Responsible Reverent Rich Rigid Rude Sad Sarcastic Self-confident Self-conscious Selfish Sensible Sensitive Serious Short Shy Silly Simple Simple-minded Smart Stable Strong Stubborn Studious Successful Tall Tantalizing Tender Tense Thoughtful Thrilling Timid Tireless Tolerant Tough Tricky Trusting Ugly Understanding Unhappy Unique Unlucky Unselfish Vain Warm Wild Willing Wise Witty Zany]
   
-  commands = []
+  cypher = "CREATE n={nodes} RETURN  ID(n) AS id, n.name AS name"
+
+  nodes = []
+  guys.each { |n| nodes <<  {"name" => n, "gender" => "male", "orientation" => orientation} }
+  girls.each { |n| nodes << {"name" => n, "gender" => "female", "orientation" => orientation} }
+  users = hashify(neo.execute_query(cypher, {:nodes => nodes}))
+
+  nodes = []
+  cities.each { |n| nodes << {"name" => n} }
+  cities = hashify(neo.execute_query(cypher, {:nodes => nodes}))
   
-  guys.each { |n| commands <<  [:create_node, {"name" => n, "gender" => "male", "orientation" => orientation}]}
-  girls.each { |n| commands <<  [:create_node, {"name" => n, "gender" => "female", "orientation" => orientation}]}
-  cities.each { |n| commands <<  [:create_node, {"name" => n}]}
-  attributes.each { |n| commands <<  [:create_node, {"name" => n}]}
-  names = guys + girls  
-  names.each_with_index do |name, x| 
-    commands << [:add_node_to_index, "users_index", "name", name, "{#{x}}"]
-    commands << [:create_relationship, "lives_in", "{#{x}}", "{#{names.size + rand(cities.size)}}", nil]    
-    attributes.sample(10 + rand(10)).each do |att|
-      commands << [:create_relationship, "has", "{#{x}}", "{#{names.size + cities.size + attributes.index(att)}}", nil]    
-    end
-    attributes.sample(10 + rand(10)).each do |att|
-      commands << [:create_relationship, "wants", "{#{x}}", "{#{names.size + cities.size + attributes.index(att)}}", nil]    
-    end
+  nodes = []  
+  attributes.each { |n| nodes << {"name" => n} }
+  attributes = hashify(neo.execute_query(cypher, {:nodes => nodes}))
+  
+  commands = []
+  users.each do |user| 
+    commands << [:add_node_to_index, "users_index", "name", user["name"], user["id"]]
+  end  
+  results = neo.batch *commands
 
-  end
+  commands = []
+  users.each do |user| 
+    commands << [:create_relationship, "lives_in", user["id"], cities.sample["id"], nil]    
+  end  
+  neo.batch *commands
 
-  batch_result = neo.batch_not_streaming *commands
+  users.each do |user| 
+    commands = []
+    attributes.sample(10 + rand(10)).each do |att|
+      commands << [:create_relationship, "has", user["id"], att["id"], nil]    
+    end
+    neo.batch *commands
+  end  
+
+  users.each do |user| 
+    commands = []
+    attributes.sample(10 + rand(10)).each do |att|
+      commands << [:create_relationship, "wants", user["id"], att["id"], nil]    
+    end
+    neo.batch *commands
+  end  
+
 end
 
 class NeoLove < Sinatra::Application
