@@ -85,11 +85,11 @@ class NeoLove < Sinatra::Application
 
     cypher = "START me=node:users_index(name={user})
               MATCH me-[:lives_in]->city<-[:lives_in]-person
-              WHERE me-[:wants]->()<-[:has]-person AND 
-                    me-[:has]->()<-[:wants]-person AND 
-                    me.orientation = person.orientation AND
+              WHERE me.orientation = person.orientation AND
                   ((me.gender <> person.gender AND me.orientation = \"straight\") OR
-                   (me.gender = person.gender AND me.orientation = \"gay\")) 
+                   (me.gender = person.gender AND me.orientation = \"gay\")) AND
+                    me-[:wants]->()<-[:has]-person AND 
+                    me-[:has]->()<-[:wants]-person
               WITH DISTINCT city.name AS city_name, person, me
               MATCH  me-[:wants]->attributes<-[:has]-person-[:wants]->requirements<-[:has]-me
               RETURN city_name, person.name AS person_name,
